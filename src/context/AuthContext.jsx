@@ -37,7 +37,8 @@ export const AuthProvider = ({ children }) => {
             if (companyDoc.exists()) {
               const cData = companyDoc.data();
               const brandColor = cData.brand_color || '#2dd4bf';
-              const combinedData = { ...uData, companyName: cData.name, brandColor };
+              const monthlyGoal = cData.monthly_goal || 0;
+              const combinedData = { ...uData, companyName: cData.name, brandColor, monthlyGoal };
               setUserData(combinedData);
               
               // Inject Brand Color CSS Variables

@@ -20,6 +20,7 @@ const PRESET_COLORS = [
 const Settings = () => {
   const { userData, logout } = useAuth();
   const [selectedColor, setSelectedColor] = useState(userData?.brandColor || '#2dd4bf');
+  const [monthlyGoal, setMonthlyGoal] = useState(userData?.monthlyGoal || 0);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const navigate = useNavigate();
@@ -49,7 +50,8 @@ const Settings = () => {
     try {
       const companyRef = doc(db, 'companies', userData.company_id);
       await updateDoc(companyRef, {
-        brand_color: selectedColor
+        brand_color: selectedColor,
+        monthly_goal: Number(monthlyGoal)
       });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -127,6 +129,27 @@ const Settings = () => {
                 <Sparkles size={12} />
                 <span>Live Preview Active</span>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="settings-section">
+          <div className="section-header">
+            <h2 className="section-title">Financial Goals</h2>
+            <p className="section-subtitle">Set your monthly target for paid revenue. This powers your dashboard progress bar.</p>
+          </div>
+          <div className="form-group max-w-sm">
+            <label className="text-sm text-brand-muted mb-2 block">Monthly Revenue Goal</label>
+            <div className="flex items-center gap-2 bg-black/20 border border-white/5 rounded-xl p-2 px-4 focus-within:border-brand-primary/50 transition-colors">
+               <span className="text-brand-muted font-medium">₹</span>
+               <input 
+                 type="number" 
+                 value={monthlyGoal} 
+                 onChange={(e) => setMonthlyGoal(e.target.value)}
+                 className="bg-transparent border-none outline-none text-white w-full py-1 text-lg font-semibold"
+                 placeholder="0"
+                 min="0"
+               />
             </div>
           </div>
         </section>

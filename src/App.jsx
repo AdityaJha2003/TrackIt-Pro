@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Settings from './pages/Settings/Settings';
+import { GoalTracker } from './components/GoalTracker/GoalTracker';
 
 function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -84,6 +85,7 @@ function Dashboard() {
         </header>
 
         <main className="animate-slide-up">
+          <GoalTracker transactions={transactions} monthlyGoal={userData?.monthlyGoal} />
           <StatCards transactions={transactions} />
           <TransactionTable transactions={transactions} onEdit={handleOpenModal} />
         </main>
