@@ -13,6 +13,7 @@ import Settings from './pages/Settings/Settings';
 
 function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingData, setEditingData] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const { logout, userData } = useAuth();
   const navigate = useNavigate();
@@ -36,6 +37,11 @@ function Dashboard() {
     }
   };
 
+  const handleOpenModal = (data = null) => {
+    setEditingData(data);
+    setIsModalOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-brand-dark text-zinc-100 p-4 sm:p-8 relative overflow-hidden font-sans">
       {/* Background orbs responding to dynamic brand primary */}
@@ -54,7 +60,7 @@ function Dashboard() {
           </div>
           <div className="flex items-center gap-3">
             <button 
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => handleOpenModal()}
               className="group flex items-center gap-2 bg-brand-primary hover:bg-opacity-80 text-brand-dark px-5 py-2.5 rounded-full font-semibold transition-all shadow-[0_0_15px_var(--brand-primary)] hover:shadow-[0_0_25px_var(--brand-primary)] active:scale-95"
             >
               <Plus size={18} className="transition-transform group-hover:rotate-90" />
@@ -79,10 +85,10 @@ function Dashboard() {
 
         <main className="animate-slide-up">
           <StatCards transactions={transactions} />
-          <TransactionTable transactions={transactions} />
+          <TransactionTable transactions={transactions} onEdit={handleOpenModal} />
         </main>
 
-        <AddEntryModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} companyId={userData?.company_id} />
+        <AddEntryModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} companyId={userData?.company_id} initialData={editingData} />
       </div>
     </div>
   );

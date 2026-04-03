@@ -4,6 +4,9 @@ import {
   where, 
   onSnapshot, 
   addDoc, 
+  doc,
+  deleteDoc,
+  updateDoc,
   serverTimestamp,
   orderBy
 } from "firebase/firestore";
@@ -36,6 +39,31 @@ export const addTransaction = async (transactionData, company_id) => {
     });
   } catch (error) {
     console.error("Error adding transaction:", error);
+    throw error;
+  }
+};
+
+// Update an existing transaction
+export const updateTransaction = async (transactionId, updatedData) => {
+  try {
+    const transactionRef = doc(db, "transactions", transactionId);
+    await updateDoc(transactionRef, {
+      ...updatedData,
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    throw error;
+  }
+};
+
+// Delete a transaction
+export const deleteTransaction = async (transactionId) => {
+  try {
+    const transactionRef = doc(db, "transactions", transactionId);
+    await deleteDoc(transactionRef);
+  } catch (error) {
+    console.error("Error deleting transaction:", error);
     throw error;
   }
 };

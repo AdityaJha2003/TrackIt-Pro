@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './AddEntryModal.css';
 import { X, Upload, Loader2 } from 'lucide-react';
-import { addTransaction } from '../../firebase/services';
+import { addTransaction, updateTransaction } from '../../firebase/services';
 
-export const AddEntryModal = ({ isOpen, onClose, companyId }) => {
+export const AddEntryModal = ({ isOpen, onClose, companyId, initialData }) => {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
+  const defaultFormState = {
     entity: '',
     project: '',
     amount: '',
@@ -14,7 +14,25 @@ export const AddEntryModal = ({ isOpen, onClose, companyId }) => {
     tdsRate: 10,
     status: 'paid',
     date: new Date().toISOString().split('T')[0]
-  });
+  };
+  const [formData, setFormData] = useState(defaultFormState);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        entity: initialData.entity || '',
+        project: initialData.project || '',
+        amount: initialData.amount || '',
+        type: initialData.type || 'outflow',
+        applyTds: initialData.hasTds || false,
+        tdsRate: initialData.tdsRate || 10,
+        status: initialData.status || 'paid',
+        date: initialData.date || new Date().toISOString().split('T')[0]
+      });
+    } else {
+      setFormData(defaultFormState);
+    }
+  }, [initialData, isOpen]);
 
   if (!isOpen) return null;
 
@@ -50,19 +68,14 @@ export const AddEntryModal = ({ isOpen, onClose, companyId }) => {
         hasTds: formData.applyTds
       };
       
-      await addTransaction(dataToSave, companyId);
+      if (initialData && initialData.id) {
+        await updateTransaction(initialData.id, dataToSave);
+      } else {
+        await addTransaction(dataToSave, companyId);
+      }
+      
       onClose();
-      // Reset form
-      setFormData({
-        entity: '',
-        project: '',
-        amount: '',
-        type: 'outflow',
-        applyTds: false,
-        tdsRate: 10,
-        status: 'paid',
-        date: new Date().toISOString().split('T')[0]
-      });
+      // Reset form handled by useEffect when modal closes/opens
     } catch (error) {
       console.error('Submission failed:', error);
       alert('Failed to save entry. Please try again.');
@@ -75,7 +88,7 @@ export const AddEntryModal = ({ isOpen, onClose, companyId }) => {
     <div className="modal-overlay">
       <div className="modal-content">
         <div className="modal-header">
-          <h2>New Journal Entry</h2>
+          <h2>{initialData ? 'Edit Journal Entry' : 'New Journal Entry'}</h2>
           <button onClick={onClose} className="close-btn" disabled={loading}><X size={20} /></button>
         </div>
         
@@ -161,7 +174,7 @@ export const AddEntryModal = ({ isOpen, onClose, companyId }) => {
           <div className="modal-footer">
             <button type="button" onClick={onClose} className="btn-secondary" disabled={loading}>Cancel</button>
             <button type="submit" className="btn-primary" disabled={loading}>
-              {loading ? <div className="flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Saving...</div> : 'Save Entry'}
+              {loading ? <div className="flex items-center gap-2"><Loader2 size={16} className="animate-spin" /> Saving...</div> : (initialData ? 'Update Entry' : 'Save Entry')}
             </button>
           </div>
         </form>
