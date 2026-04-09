@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Check, Palette, Loader2, Sparkles } from 'lucide-react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowLeft, Check, Palette, Loader2, Sparkles, Receipt, CreditCard, Smartphone, Building2 } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
@@ -18,19 +18,22 @@ const PRESET_COLORS = [
 ];
 
 const Settings = () => {
-  const { userData, logout } = useAuth();
+  const { userData } = useAuth();
   const [selectedColor, setSelectedColor] = useState(userData?.brandColor || '#2dd4bf');
   const [monthlyGoal, setMonthlyGoal] = useState(userData?.monthlyGoal || 0);
+  const [invoicePrefix, setInvoicePrefix] = useState(userData?.invoicePrefix || 'INV');
+  const [bankName, setBankName] = useState(userData?.bankName || '');
+  const [accountNumber, setAccountNumber] = useState(userData?.accountNumber || '');
+  const [ifsc, setIfsc] = useState(userData?.ifsc || '');
+  const [accountHolderName, setAccountHolderName] = useState(userData?.accountHolderName || '');
+  const [upiId, setUpiId] = useState(userData?.upiId || '');
+  const [paymentDisplay, setPaymentDisplay] = useState(userData?.paymentDisplay || 'both');
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const navigate = useNavigate();
 
-  // Helper to sync CSS variables for real-time preview
   const updatePreview = (color) => {
     const root = document.documentElement;
     root.style.setProperty('--brand-primary', color);
-    
-    // Hex to RGB conversion
     const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
     if (result) {
       const rgb = `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}`;
@@ -45,13 +48,19 @@ const Settings = () => {
 
   const handleSave = async () => {
     if (!userData?.company_id) return;
-    
     setLoading(true);
     try {
       const companyRef = doc(db, 'companies', userData.company_id);
       await updateDoc(companyRef, {
         brand_color: selectedColor,
-        monthly_goal: Number(monthlyGoal)
+        monthly_goal: Number(monthlyGoal),
+        invoice_prefix: invoicePrefix || 'INV',
+        bank_name: bankName,
+        account_number: accountNumber,
+        ifsc,
+        account_holder_name: accountHolderName,
+        upi_id: upiId,
+        payment_display: paymentDisplay,
       });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -62,9 +71,10 @@ const Settings = () => {
     }
   };
 
+  const inputClass = "w-full bg-black/20 border border-white/5 rounded-xl px-4 py-2.5 text-white placeholder-zinc-600 outline-none focus:border-brand-primary/50 transition-colors text-sm font-medium";
+
   return (
     <div className="settings-container">
-      {/* Background Orbs */}
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-brand-primary/10 blur-[100px] pointer-events-none" />
       
       <header className="settings-header">
@@ -82,20 +92,19 @@ const Settings = () => {
       </header>
 
       <main className="settings-content">
+
+        {/* ── BRAND IDENTITY ─────────────────────────────────────── */}
         <section className="settings-section">
           <div className="section-header">
             <div className="flex items-center gap-2 mb-2">
               <Palette size={20} className="text-brand-primary" />
               <h2 className="section-title">Brand Identity</h2>
             </div>
-            <p className="section-subtitle">
-              Define your agency's signature color. This will update the entire dashboard experience.
-            </p>
+            <p className="section-subtitle">Define your agency's signature color. This updates the entire dashboard experience.</p>
           </div>
-
           <div className="color-grid">
             {PRESET_COLORS.map((color) => (
-              <div 
+              <div
                 key={color}
                 className={`color-option ${selectedColor === color ? 'selected' : ''}`}
                 style={{ backgroundColor: color }}
@@ -109,15 +118,10 @@ const Settings = () => {
               </div>
             ))}
           </div>
-
           <div className="custom-color-picker">
             <div className="flex items-center gap-4">
               <div className="color-input-wrapper">
-                <input 
-                  type="color" 
-                  value={selectedColor} 
-                  onChange={(e) => handleColorChange(e.target.value)} 
-                />
+                <input type="color" value={selectedColor} onChange={(e) => handleColorChange(e.target.value)} />
               </div>
               <div>
                 <p className="text-sm font-semibold mb-1">Custom Color</p>
@@ -133,27 +137,116 @@ const Settings = () => {
           </div>
         </section>
 
+        {/* ── FINANCIAL GOALS ─────────────────────────────────────── */}
         <section className="settings-section">
           <div className="section-header">
             <h2 className="section-title">Financial Goals</h2>
-            <p className="section-subtitle">Set your monthly target for paid revenue. This powers your dashboard progress bar.</p>
+            <p className="section-subtitle">Set your monthly target for paid revenue. Powers your dashboard progress bar.</p>
           </div>
           <div className="form-group max-w-sm">
             <label className="text-sm text-brand-muted mb-2 block">Monthly Revenue Goal</label>
             <div className="flex items-center gap-2 bg-black/20 border border-white/5 rounded-xl p-2 px-4 focus-within:border-brand-primary/50 transition-colors">
-               <span className="text-brand-muted font-medium">₹</span>
-               <input 
-                 type="number" 
-                 value={monthlyGoal} 
-                 onChange={(e) => setMonthlyGoal(e.target.value)}
-                 className="bg-transparent border-none outline-none text-white w-full py-1 text-lg font-semibold"
-                 placeholder="0"
-                 min="0"
-               />
+              <span className="text-brand-muted font-medium">₹</span>
+              <input
+                type="number"
+                value={monthlyGoal}
+                onChange={(e) => setMonthlyGoal(e.target.value)}
+                className="bg-transparent border-none outline-none text-white w-full py-1 text-lg font-semibold"
+                placeholder="0"
+                min="0"
+              />
             </div>
           </div>
         </section>
 
+        {/* ── INVOICE DEFAULTS ─────────────────────────────────────── */}
+        <section className="settings-section">
+          <div className="section-header">
+            <div className="flex items-center gap-2 mb-2">
+              <Receipt size={20} className="text-brand-primary" />
+              <h2 className="section-title">Invoice Defaults</h2>
+            </div>
+            <p className="section-subtitle">Configure how your invoices are numbered and how clients can pay you.</p>
+          </div>
+
+          {/* Invoice Prefix */}
+          <div className="mb-6">
+            <label className="text-sm text-brand-muted mb-2 block">Invoice Number Prefix</label>
+            <div className="flex items-center gap-3 max-w-xs">
+              <input
+                type="text"
+                value={invoicePrefix}
+                onChange={(e) => setInvoicePrefix(e.target.value.toUpperCase())}
+                className={inputClass + " max-w-[120px] text-center font-bold tracking-widest"}
+                placeholder="INV"
+                maxLength={8}
+              />
+              <p className="text-brand-muted text-sm">→ <span className="text-white font-medium">{invoicePrefix || 'INV'}-2026-0001</span></p>
+            </div>
+          </div>
+
+          {/* Payment Display Toggle */}
+          <div className="mb-6">
+            <label className="text-sm text-brand-muted mb-3 block">Show on Invoice PDF</label>
+            <div className="flex gap-3 flex-wrap">
+              {[
+                { value: 'bank', label: 'Bank Details Only', icon: <Building2 size={16} /> },
+                { value: 'upi', label: 'UPI Only', icon: <Smartphone size={16} /> },
+                { value: 'both', label: 'Both', icon: <CreditCard size={16} /> },
+              ].map(opt => (
+                <button
+                  key={opt.value}
+                  onClick={() => setPaymentDisplay(opt.value)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium border transition-all ${
+                    paymentDisplay === opt.value
+                      ? 'bg-brand-primary/20 border-brand-primary text-brand-primary'
+                      : 'bg-black/20 border-white/5 text-brand-muted hover:border-white/20'
+                  }`}
+                >
+                  {opt.icon} {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Bank Details */}
+          {(paymentDisplay === 'bank' || paymentDisplay === 'both') && (
+            <div className="mb-6 p-4 rounded-xl bg-black/20 border border-white/5">
+              <p className="text-sm font-semibold mb-4 flex items-center gap-2 text-zinc-300"><Building2 size={16} className="text-brand-primary" /> Bank Account Details</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-brand-muted mb-1 block">Account Holder Name</label>
+                  <input type="text" value={accountHolderName} onChange={(e) => setAccountHolderName(e.target.value)} className={inputClass} placeholder="e.g. Aditya Corp" />
+                </div>
+                <div>
+                  <label className="text-xs text-brand-muted mb-1 block">Bank Name</label>
+                  <input type="text" value={bankName} onChange={(e) => setBankName(e.target.value)} className={inputClass} placeholder="e.g. HDFC Bank" />
+                </div>
+                <div>
+                  <label className="text-xs text-brand-muted mb-1 block">Account Number</label>
+                  <input type="text" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} className={inputClass} placeholder="e.g. 00123456789" />
+                </div>
+                <div>
+                  <label className="text-xs text-brand-muted mb-1 block">IFSC Code</label>
+                  <input type="text" value={ifsc} onChange={(e) => setIfsc(e.target.value.toUpperCase())} className={inputClass} placeholder="e.g. HDFC0001234" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* UPI */}
+          {(paymentDisplay === 'upi' || paymentDisplay === 'both') && (
+            <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+              <p className="text-sm font-semibold mb-4 flex items-center gap-2 text-zinc-300"><Smartphone size={16} className="text-brand-primary" /> UPI Details</p>
+              <div className="max-w-sm">
+                <label className="text-xs text-brand-muted mb-1 block">UPI ID</label>
+                <input type="text" value={upiId} onChange={(e) => setUpiId(e.target.value)} className={inputClass} placeholder="e.g. yourname@upi" />
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ── COMPANY INFO ─────────────────────────────────────── */}
         <section className="settings-section">
           <div className="section-header">
             <h2 className="section-title">Company Info</h2>
@@ -176,15 +269,11 @@ const Settings = () => {
         <div className="flex items-center gap-6">
           {success && (
             <p className="text-brand-primary text-sm font-medium flex items-center gap-2">
-              <Check size={16} /> Identity Propagated Successfully
+              <Check size={16} /> Settings Saved Successfully
             </p>
           )}
-          <button 
-            className="save-button flex items-center gap-2"
-            onClick={handleSave}
-            disabled={loading}
-          >
-            {loading ? <Loader2 className="animate-spin" size={18} /> : 'Synchronize Identity'}
+          <button className="save-button flex items-center gap-2" onClick={handleSave} disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" size={18} /> : 'Save All Settings'}
           </button>
         </div>
       </footer>

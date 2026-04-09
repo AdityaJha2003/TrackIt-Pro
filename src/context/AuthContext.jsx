@@ -38,7 +38,19 @@ export const AuthProvider = ({ children }) => {
               const cData = companyDoc.data();
               const brandColor = cData.brand_color || '#2dd4bf';
               const monthlyGoal = cData.monthly_goal || 0;
-              const combinedData = { ...uData, companyName: cData.name, brandColor, monthlyGoal };
+              const combinedData = {
+                ...uData,
+                companyName: cData.name,
+                brandColor,
+                monthlyGoal,
+                invoicePrefix: cData.invoice_prefix || 'INV',
+                bankName: cData.bank_name || '',
+                accountNumber: cData.account_number || '',
+                ifsc: cData.ifsc || '',
+                accountHolderName: cData.account_holder_name || '',
+                upiId: cData.upi_id || '',
+                paymentDisplay: cData.payment_display || 'both',
+              };
               setUserData(combinedData);
               
               // Inject Brand Color CSS Variables

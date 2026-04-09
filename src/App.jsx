@@ -3,13 +3,14 @@ import { Routes, Route, useNavigate, Link } from 'react-router-dom';
 import { TransactionTable } from './components/TransactionTable/TransactionTable';
 import { StatCards } from './components/StatCards/StatCards';
 import { AddEntryModal } from './components/AddEntryModal/AddEntryModal';
-import { Plus, LogOut, Settings as SettingsIcon } from 'lucide-react';
+import { Plus, LogOut, Settings as SettingsIcon, FileText } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { subscribeToTransactions } from './firebase/services';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Settings from './pages/Settings/Settings';
+import Invoices from './pages/Invoices/Invoices';
 import { GoalTracker } from './components/GoalTracker/GoalTracker';
 
 function Dashboard() {
@@ -68,6 +69,13 @@ function Dashboard() {
               <span className="hidden sm:inline">New Entry</span>
             </button>
             <Link 
+              to="/invoices"
+              className="p-2.5 rounded-full bg-zinc-800/50 hover:bg-zinc-700/50 text-brand-muted hover:text-white transition-all border border-white/5"
+              title="Invoices"
+            >
+              <FileText size={20} />
+            </Link>
+            <Link 
               to="/settings"
               className="p-2.5 rounded-full bg-zinc-800/50 hover:bg-zinc-700/50 text-brand-muted hover:text-white transition-all border border-white/5"
               title="Agency Settings"
@@ -104,6 +112,11 @@ function App() {
       <Route path="/settings" element={
         <ProtectedRoute>
           <Settings />
+        </ProtectedRoute>
+      } />
+      <Route path="/invoices" element={
+        <ProtectedRoute>
+          <Invoices />
         </ProtectedRoute>
       } />
       <Route path="/" element={
