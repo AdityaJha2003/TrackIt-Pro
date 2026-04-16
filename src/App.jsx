@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, Link } from 'react-router-dom';
 import { TransactionTable } from './components/TransactionTable/TransactionTable';
 import { StatCards } from './components/StatCards/StatCards';
 import { AddEntryModal } from './components/AddEntryModal/AddEntryModal';
-import { Plus, LogOut, Settings as SettingsIcon, FileText } from 'lucide-react';
+import { Plus, LogOut, Settings as SettingsIcon, Receipt } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
 import { subscribeToTransactions } from './firebase/services';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -66,14 +66,15 @@ function Dashboard() {
               className="group flex items-center gap-2 bg-brand-primary hover:bg-opacity-80 text-brand-dark px-5 py-2.5 rounded-full font-semibold transition-all shadow-[0_0_15px_var(--brand-primary)] hover:shadow-[0_0_25px_var(--brand-primary)] active:scale-95"
             >
               <Plus size={18} className="transition-transform group-hover:rotate-90" />
-              <span className="hidden sm:inline">New Entry</span>
+              <span className="hidden sm:inline">Log Expense</span>
             </button>
-            <Link 
+            <Link
               to="/invoices"
-              className="p-2.5 rounded-full bg-zinc-800/50 hover:bg-zinc-700/50 text-brand-muted hover:text-white transition-all border border-white/5"
-              title="Invoices"
+              className="group flex items-center gap-2 bg-zinc-800/60 hover:bg-zinc-700/60 text-zinc-100 px-5 py-2.5 rounded-full font-semibold transition-all border border-white/5 hover:border-white/10 active:scale-95"
+              title="Create a new client invoice"
             >
-              <FileText size={20} />
+              <Receipt size={18} />
+              <span className="hidden sm:inline">New Invoice</span>
             </Link>
             <Link 
               to="/settings"

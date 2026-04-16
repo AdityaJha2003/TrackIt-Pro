@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './TransactionTable.css';
 import { Paperclip, ArrowUpRight, ArrowDownRight, Clock, CheckCircle, AlertCircle, Search, Edit2, Trash2, AlertTriangle } from 'lucide-react';
-import { updateTransaction, deleteTransaction } from '../../firebase/services';
+import { updateTransaction, deleteTransaction, updateInvoiceStatus } from '../../firebase/services';
 
 export const TransactionTable = ({ transactions, onEdit }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,6 +29,20 @@ export const TransactionTable = ({ transactions, onEdit }) => {
     const newStatus = txn.status === 'pending' ? 'paid' : 'pending';
     try {
       await updateTransaction(txn.id, { status: newStatus });
+
+      // If this transaction is linked to an invoice, keep the invoice in sync
+      // so the user never has to update status in two places.
+      if (txn.invoice_id) {
+        // 'paid' transaction -> 'paid' invoice
+        // 'pending' transaction -> 'sent' invoice (it was already sent, awaiting payment)
+        const invoiceStatus = newStatus === 'paid' ? 'paid' : 'sent';
+        await updateInvoiceStatus(
+          txn.invoice_id,
+          invoiceStatus,
+          txn.id,
+          true  // skipTxnUpdate — transaction already updated above
+        );
+      }
     } catch (error) {
       console.error("Error toggling status:", error);
     }

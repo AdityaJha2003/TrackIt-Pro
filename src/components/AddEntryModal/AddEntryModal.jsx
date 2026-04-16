@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import './AddEntryModal.css';
-import { X, Upload, Loader2 } from 'lucide-react';
-import { addTransaction, updateTransaction } from '../../firebase/services';
+import { X, Upload, Loader2, FileText, ArrowRight } from 'lucide-react';
+import { addTransaction, updateTransaction, updateInvoiceStatus } from '../../firebase/services';
 
 export const AddEntryModal = ({ isOpen, onClose, companyId, initialData }) => {
   const [loading, setLoading] = useState(false);
@@ -70,6 +71,22 @@ export const AddEntryModal = ({ isOpen, onClose, companyId, initialData }) => {
       
       if (initialData && initialData.id) {
         await updateTransaction(initialData.id, dataToSave);
+
+        // ── AUTO-SYNC LINKED INVOICE ─────────────────────────────────────
+        // If this transaction came from an invoice, keep the invoice status
+        // in sync so the user doesn't have to update it in two places.
+        if (initialData.invoice_id) {
+          // Map transaction status → invoice status
+          // 'paid'    → invoice is fully paid
+          // 'pending' → invoice was already sent, awaiting payment
+          const invoiceStatus = dataToSave.status === 'paid' ? 'paid' : 'sent';
+          await updateInvoiceStatus(
+            initialData.invoice_id,
+            invoiceStatus,
+            initialData.id,  // pass txn id (ignored because skipTxnUpdate=true)
+            true             // skipTxnUpdate — transaction already updated above
+          );
+        }
       } else {
         await addTransaction(dataToSave, companyId);
       }
@@ -106,6 +123,23 @@ export const AddEntryModal = ({ isOpen, onClose, companyId, initialData }) => {
               </label>
             </div>
           </div>
+
+          {/* Inflow nudge — appears when user picks Client Inflow on a new entry */}
+          {formData.type === 'inflow' && !initialData && (
+            <div className="inflow-nudge">
+              <FileText size={16} className="nudge-icon" />
+              <div className="nudge-text">
+                <p className="nudge-heading">Billing a client?</p>
+                <p className="nudge-body">
+                  For formal invoices with line items, GST &amp; TDS — use the{' '}
+                  <Link to="/invoices" onClick={onClose} className="nudge-link">
+                    Invoices module <ArrowRight size={12} style={{ display: 'inline', verticalAlign: 'middle' }} />
+                  </Link>.
+                  Continue here for informal payments or advances.
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid-2-col">
             <div className="form-group">

@@ -134,14 +134,16 @@ export const addInvoice = async (invoiceData, company_id) => {
   }
 };
 
-// Update invoice status and sync the linked transaction
-export const updateInvoiceStatus = async (invoiceId, newStatus, linkedTxnId) => {
+// Update invoice status and optionally sync the linked transaction.
+// Pass skipTxnUpdate=true when the transaction was already updated separately
+// (e.g. when called from AddEntryModal right after updateTransaction).
+export const updateInvoiceStatus = async (invoiceId, newStatus, linkedTxnId, skipTxnUpdate = false) => {
   try {
     await updateDoc(doc(db, "invoices", invoiceId), {
       status: newStatus,
       updatedAt: serverTimestamp()
     });
-    if (linkedTxnId) {
+    if (linkedTxnId && !skipTxnUpdate) {
       await updateDoc(doc(db, "transactions", linkedTxnId), {
         status: newStatus === "paid" ? "paid" : "pending",
         updatedAt: serverTimestamp()
