@@ -33,39 +33,43 @@ export const AuthProvider = ({ children }) => {
             const uData = userDoc.data();
             
             // Fetch Company Metadata
-            const companyDoc = await getDoc(doc(db, 'companies', uData.company_id));
-            if (companyDoc.exists()) {
-              const cData = companyDoc.data();
-              const brandColor = cData.brand_color || '#2dd4bf';
-              const monthlyGoal = cData.monthly_goal || 0;
-              const combinedData = {
-                ...uData,
-                companyName: cData.name,
-                brandColor,
-                monthlyGoal,
-                invoicePrefix: cData.invoice_prefix || 'INV',
-                bankName: cData.bank_name || '',
-                accountNumber: cData.account_number || '',
-                ifsc: cData.ifsc || '',
-                accountHolderName: cData.account_holder_name || '',
-                upiId: cData.upi_id || '',
-                paymentDisplay: cData.payment_display || 'both',
-              };
-              setUserData(combinedData);
-              
-              // Inject Brand Color CSS Variables
-              const root = document.documentElement;
-              root.style.setProperty('--brand-primary', brandColor);
-              
-              // Convert hex to RGB for opacity utilities
-              const hexToRgb = (hex) => {
-                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-                return result ? 
-                  `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
-                  '45, 212, 191';
-              };
-              root.style.setProperty('--brand-primary-rgb', hexToRgb(brandColor));
-              
+            if (uData.company_id) {
+              const companyDoc = await getDoc(doc(db, 'companies', uData.company_id));
+              if (companyDoc.exists()) {
+                const cData = companyDoc.data();
+                const brandColor = cData.brand_color || '#2dd4bf';
+                const monthlyGoal = cData.monthly_goal || 0;
+                const combinedData = {
+                  ...uData,
+                  companyName: cData.name,
+                  brandColor,
+                  monthlyGoal,
+                  invoicePrefix: cData.invoice_prefix || 'INV',
+                  bankName: cData.bank_name || '',
+                  accountNumber: cData.account_number || '',
+                  ifsc: cData.ifsc || '',
+                  accountHolderName: cData.account_holder_name || '',
+                  upiId: cData.upi_id || '',
+                  paymentDisplay: cData.payment_display || 'both',
+                };
+                setUserData(combinedData);
+                
+                // Inject Brand Color CSS Variables
+                const root = document.documentElement;
+                root.style.setProperty('--brand-primary', brandColor);
+                
+                // Convert hex to RGB for opacity utilities
+                const hexToRgb = (hex) => {
+                  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                  return result ? 
+                    `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : 
+                    '45, 212, 191';
+                };
+                root.style.setProperty('--brand-primary-rgb', hexToRgb(brandColor));
+                
+              } else {
+                setUserData(uData);
+              }
             } else {
               setUserData(uData);
             }

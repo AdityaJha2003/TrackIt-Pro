@@ -8,7 +8,6 @@ import {
   deleteDoc,
   updateDoc,
   serverTimestamp,
-  orderBy,
   getDocs
 } from "firebase/firestore";
 import { db } from "./config";
@@ -16,17 +15,22 @@ import { db } from "./config";
 // Fetch Transactions for a specific company in real-time
 export const subscribeToTransactions = (company_id, callback) => {
   const q = query(
-    collection(db, "transactions"), 
-    where("company_id", "==", company_id),
-    orderBy("date", "desc")
+    collection(db, "transactions"),
+    where("company_id", "==", company_id)
   );
 
   return onSnapshot(q, (snapshot) => {
-    const transactions = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const transactions = snapshot.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      // Sort client-side to avoid needing a composite Firestore index
+      .sort((a, b) => {
+        const da = a.date ? new Date(a.date) : new Date(0);
+        const db_ = b.date ? new Date(b.date) : new Date(0);
+        return db_ - da;
+      });
     callback(transactions);
+  }, (error) => {
+    console.error("subscribeToTransactions error:", error);
   });
 };
 
@@ -75,12 +79,20 @@ export const deleteTransaction = async (transactionId) => {
 export const subscribeToInvoices = (company_id, callback) => {
   const q = query(
     collection(db, "invoices"),
-    where("company_id", "==", company_id),
-    orderBy("createdAt", "desc")
+    where("company_id", "==", company_id)
   );
   return onSnapshot(q, (snapshot) => {
-    const invoices = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+    const invoices = snapshot.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      // Sort client-side: newest first, to avoid needing a composite Firestore index
+      .sort((a, b) => {
+        const ta = a.createdAt?.seconds ?? 0;
+        const tb = b.createdAt?.seconds ?? 0;
+        return tb - ta;
+      });
     callback(invoices);
+  }, (error) => {
+    console.error("subscribeToInvoices error:", error);
   });
 };
 

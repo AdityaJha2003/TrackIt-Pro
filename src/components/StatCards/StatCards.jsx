@@ -2,8 +2,9 @@ import React from 'react';
 import './StatCards.css';
 
 export const StatCards = ({ transactions }) => {
-  const currentMonth = 4; // April for MVP
-  const currentYear = 2026;
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
 
   const currentMonthTxns = transactions.filter(t => {
     const d = new Date(t.date);

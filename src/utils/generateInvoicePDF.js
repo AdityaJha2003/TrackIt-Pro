@@ -8,8 +8,13 @@ const hexToRgb = (hex) => {
     : [45, 212, 191];
 };
 
-const formatINR = (amount) =>
-  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount || 0);
+const formatINR = (amount) => {
+  // Use "INR" text instead of symbol to avoid font encoding issues in jsPDF
+  const value = new Intl.NumberFormat('en-IN', {
+    maximumFractionDigits: 0,
+  }).format(amount || 0);
+  return `INR ${value}`;
+};
 
 export const generateInvoicePDF = (invoice, companyData) => {
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -18,84 +23,96 @@ export const generateInvoicePDF = (invoice, companyData) => {
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
 
-  // ── BACKGROUND ──────────────────────────────────────────────────────
-  pdf.setFillColor(13, 13, 15);
+  const margin = 14;
+  const secondaryColor = [100, 100, 110];
+  const primaryTextColor = [30, 30, 35];
+
+  // ── BACKGROUND (White for professional print) ────────────────────────
+  pdf.setFillColor(255, 255, 255);
   pdf.rect(0, 0, pageWidth, pageHeight, 'F');
 
-  // ── BRAND ACCENT HEADER BAND ────────────────────────────────────────
+  // ── BRAND TOP BAR ───────────────────────────────────────────────────
   pdf.setFillColor(r, g, b);
-  pdf.rect(0, 0, pageWidth, 2.5, 'F');
+  pdf.rect(0, 0, pageWidth, 4, 'F');
 
-  // Subtle glow strip
-  pdf.setFillColor(r, g, b, 0.08);
-  pdf.rect(0, 2.5, pageWidth, 35, 'F');
-
-  // ── AGENCY NAME ─────────────────────────────────────────────────────
+  // ── HEADER SECTION ─────────────────────────────────────────────────
+  // Agency Name (Left)
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(22);
-  pdf.setTextColor(255, 255, 255);
-  pdf.text(companyData.companyName || 'Agency', 14, 22);
+  pdf.setFontSize(24);
+  pdf.setTextColor(primaryTextColor[0], primaryTextColor[1], primaryTextColor[2]);
+  pdf.text(companyData.companyName || 'Agency', margin, 25);
 
-  // ── "INVOICE" LABEL ─────────────────────────────────────────────────
+  // "INVOICE" label (Right)
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(11);
+  pdf.setFontSize(10);
   pdf.setTextColor(r, g, b);
   const invoiceLabel = 'INVOICE';
   const labelWidth = pdf.getTextWidth(invoiceLabel);
-  pdf.text(invoiceLabel, pageWidth - 14 - labelWidth, 16);
+  pdf.text(invoiceLabel, pageWidth - margin - labelWidth, 20);
 
-  // Invoice number
-  pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(9);
-  pdf.setTextColor(160, 160, 170);
+  // Invoice number (Right)
+  pdf.setFont('helvetica', 'bold');
+  pdf.setFontSize(14);
+  pdf.setTextColor(primaryTextColor[0], primaryTextColor[1], primaryTextColor[2]);
   const invNum = invoice.invoice_number || 'INV-0001';
   const numWidth = pdf.getTextWidth(invNum);
-  pdf.text(invNum, pageWidth - 14 - numWidth, 22);
+  pdf.text(invNum, pageWidth - margin - numWidth, 27);
 
   // ── DIVIDER ─────────────────────────────────────────────────────────
-  pdf.setDrawColor(r, g, b);
-  pdf.setLineWidth(0.3);
-  pdf.line(14, 38, pageWidth - 14, 38);
+  pdf.setDrawColor(240, 240, 245);
+  pdf.setLineWidth(0.5);
+  pdf.line(margin, 35, pageWidth - margin, 35);
 
-  // ── BILL TO / INVOICE META ──────────────────────────────────────────
+  // ── INFO SECTION ───────────────────────────────────────────────────
+  const infoY = 48;
   const col2 = pageWidth / 2 + 10;
 
+  // BILL TO
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(8);
-  pdf.setTextColor(r, g, b);
-  pdf.text('BILL TO', 14, 48);
+  pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  pdf.text('BILL TO', margin, infoY);
 
   pdf.setFont('helvetica', 'bold');
-  pdf.setFontSize(11);
-  pdf.setTextColor(255, 255, 255);
-  pdf.text(invoice.client_name || '-', 14, 55);
+  pdf.setFontSize(12);
+  pdf.setTextColor(primaryTextColor[0], primaryTextColor[1], primaryTextColor[2]);
+  pdf.text(invoice.client_name || '-', margin, infoY + 7);
 
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(8.5);
-  pdf.setTextColor(150, 150, 160);
-  if (invoice.client_email) pdf.text(invoice.client_email, 14, 61);
+  pdf.setFontSize(9);
+  pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  let clientDetailsY = infoY + 13;
+  if (invoice.client_email) {
+    pdf.text(invoice.client_email, margin, clientDetailsY);
+    clientDetailsY += 5;
+  }
   if (invoice.client_address) {
-    const addrLines = pdf.splitTextToSize(invoice.client_address, 80);
-    pdf.text(addrLines, 14, 66);
+    const addrLines = pdf.splitTextToSize(invoice.client_address, 70);
+    pdf.text(addrLines, margin, clientDetailsY);
   }
 
-  // Invoice Meta (right column)
+  // INVOICE META
   const metaItems = [
-    { label: 'Invoice Date', value: invoice.date || '-' },
-    { label: 'Due Date', value: invoice.due_date || '-' },
+    { label: 'Date Issued', value: invoice.date || '-' },
+    { label: 'Payment Due', value: invoice.due_date || '-' },
     { label: 'Status', value: (invoice.status || 'draft').toUpperCase() },
   ];
-  let metaY = 48;
+
+  let metaY = infoY;
   metaItems.forEach(({ label, value }) => {
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8);
-    pdf.setTextColor(r, g, b);
+    pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
     pdf.text(label.toUpperCase(), col2, metaY);
-    pdf.setFont('helvetica', 'normal');
+    
+    pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(9);
-    pdf.setTextColor(220, 220, 230);
-    pdf.text(value, col2, metaY + 5);
-    metaY += 12;
+    pdf.setTextColor(primaryTextColor[0], primaryTextColor[1], primaryTextColor[2]);
+    if (label === 'Status') {
+      pdf.setTextColor(r, g, b); // Accent the status
+    }
+    pdf.text(value, col2, metaY + 6);
+    metaY += 14;
   });
 
   // ── LINE ITEMS TABLE ────────────────────────────────────────────────
@@ -108,134 +125,154 @@ export const generateInvoicePDF = (invoice, companyData) => {
   ]);
 
   autoTable(pdf, {
-    startY: 82,
-    head: [['DESCRIPTION', 'QTY', 'RATE', 'AMOUNT']],
+    startY: 95,
+    head: [['Description', 'Qty', 'Unit Rate', 'Amount']],
     body: tableBody,
-    theme: 'plain',
+    theme: 'striped',
     styles: {
-      fillColor: [20, 20, 22],
-      textColor: [210, 210, 220],
       fontSize: 9,
-      cellPadding: 4,
+      cellPadding: 6,
+      textColor: [50, 50, 50],
+      font: 'helvetica',
     },
     headStyles: {
-      fillColor: [r, g, b, 0.15],
-      textColor: [r, g, b],
+      fillColor: [r, g, b],
+      textColor: [255, 255, 255],
       fontStyle: 'bold',
-      fontSize: 8,
-      lineColor: [r, g, b, 0.2],
-      lineWidth: 0,
+      fontSize: 9,
     },
-    alternateRowStyles: { fillColor: [25, 25, 28] },
+    alternateRowStyles: {
+      fillColor: [250, 251, 252],
+    },
     columnStyles: {
       0: { cellWidth: 'auto' },
       1: { halign: 'center', cellWidth: 20 },
-      2: { halign: 'right', cellWidth: 38 },
-      3: { halign: 'right', cellWidth: 38 },
+      2: { halign: 'right', cellWidth: 40 },
+      3: { halign: 'right', cellWidth: 40 },
     },
-    margin: { left: 14, right: 14 },
+    margin: { left: margin, right: margin },
   });
 
-  const tableEndY = pdf.lastAutoTable.finalY + 6;
+  const tableEndY = pdf.lastAutoTable.finalY + 10;
 
   // ── TOTALS ──────────────────────────────────────────────────────────
-  const totalsX = pageWidth - 70;
-  const totalsRight = pageWidth - 14;
-  let ty = tableEndY + 6;
+  const totalsX = pageWidth - margin - 80;
+  const totalsRight = pageWidth - margin;
+  let ty = tableEndY;
 
-  const drawTotalRow = (label, value, bold = false, accent = false) => {
-    pdf.setFont('helvetica', bold ? 'bold' : 'normal');
-    pdf.setFontSize(bold ? 10 : 9);
-    pdf.setTextColor(accent ? r : 150, accent ? g : 150, accent ? b : 160);
-    const lw = pdf.getTextWidth(label);
+  const drawTotalRow = (label, value, isBold = false, isTotal = false) => {
+    // Draw label
+    pdf.setFont('helvetica', isBold ? 'bold' : 'normal');
+    pdf.setFontSize(isTotal ? 11 : 9);
+    pdf.setTextColor(isBold ? primaryTextColor[0] : secondaryColor[0], isBold ? primaryTextColor[1] : secondaryColor[1], isBold ? primaryTextColor[2] : secondaryColor[2]);
     pdf.text(label, totalsX, ty);
-    pdf.setTextColor(bold ? 255 : 200, bold ? 255 : 200, bold ? 255 : 210);
+
+    // Draw value (right-aligned)
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(isTotal ? 11 : 9);
+    if (isTotal) {
+      pdf.setTextColor(r, g, b);
+    } else {
+      pdf.setTextColor(primaryTextColor[0], primaryTextColor[1], primaryTextColor[2]);
+    }
     const vw = pdf.getTextWidth(value);
     pdf.text(value, totalsRight - vw, ty);
-    ty += 7;
+    ty += 9;
   };
 
   drawTotalRow('Subtotal', formatINR(invoice.subtotal));
   if ((invoice.gst_percent || 0) > 0) {
-    drawTotalRow(`GST (${invoice.gst_percent}%)`, formatINR(invoice.gst_amount));
+    drawTotalRow(`Tax (GST ${invoice.gst_percent}%)`, formatINR(invoice.gst_amount));
   }
   if ((invoice.tds_percent || 0) > 0) {
     drawTotalRow(`TDS Deduction (${invoice.tds_percent}%)`, `- ${formatINR(invoice.tds_amount)}`);
   }
 
-  // Total divider
-  pdf.setDrawColor(r, g, b);
-  pdf.setLineWidth(0.3);
-  pdf.line(totalsX - 2, ty, totalsRight, ty);
-  ty += 5;
-
-  drawTotalRow('TOTAL PAYABLE', formatINR(invoice.total_payable), true, true);
+  ty += 2;
+  pdf.setDrawColor(240, 240, 245);
+  pdf.line(totalsX, ty - 5, totalsRight, ty - 5);
+  
+  drawTotalRow('Total Amount Payable', formatINR(invoice.total_payable), true, true);
 
   // ── PAYMENT DETAILS ─────────────────────────────────────────────────
   const paymentDisplay = companyData.paymentDisplay || 'both';
-  const payY = Math.max(ty + 12, tableEndY + 50);
+  let payY = Math.max(ty + 20, tableEndY + 50);
 
   if (paymentDisplay !== 'none') {
-    pdf.setFillColor(20, 20, 24);
-    pdf.setDrawColor(r, g, b, 0.2);
-    pdf.roundedRect(14, payY, pageWidth - 28, paymentDisplay === 'both' ? 42 : 24, 2, 2, 'FD');
+    // Background box for payment details
+    pdf.setFillColor(252, 253, 255);
+    pdf.setDrawColor(230, 235, 245);
+    pdf.roundedRect(margin, payY, pageWidth - margin * 2, paymentDisplay === 'both' ? 45 : 28, 2, 2, 'FD');
 
     pdf.setFont('helvetica', 'bold');
     pdf.setFontSize(8);
     pdf.setTextColor(r, g, b);
-    pdf.text('PAYMENT DETAILS', 20, payY + 7);
+    pdf.text('PAYMENT INFORMATION', margin + 6, payY + 8);
 
-    let py = payY + 15;
-    const payCol2 = 14 + (pageWidth - 28) / 2;
+    let py = payY + 16;
+    const payCol2 = margin + (pageWidth - margin * 2) / 2;
 
     const drawPayField = (label, value, x, y) => {
       pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(7.5);
-      pdf.setTextColor(120, 120, 130);
+      pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
       pdf.text(label, x, y);
-      pdf.setFont('helvetica', 'normal');
+      
+      pdf.setFont('helvetica', 'bold');
       pdf.setFontSize(9);
-      pdf.setTextColor(220, 220, 230);
-      pdf.text(value || '-', x, y + 5);
+      pdf.setTextColor(primaryTextColor[0], primaryTextColor[1], primaryTextColor[2]);
+      pdf.text(String(value || '-'), x, y + 5);
     };
 
     if (paymentDisplay === 'bank' || paymentDisplay === 'both') {
-      drawPayField('Account Holder', companyData.accountHolderName || '-', 20, py);
-      drawPayField('Bank Name', companyData.bankName || '-', payCol2, py);
-      py += 12;
-      drawPayField('Account Number', companyData.accountNumber || '-', 20, py);
-      drawPayField('IFSC Code', companyData.ifsc || '-', payCol2, py);
+      drawPayField('Account Holder', companyData.accountHolderName, margin + 6, py);
+      drawPayField('Bank Name', companyData.bankName, payCol2, py);
+      py += 14;
+      drawPayField('Account Number', companyData.accountNumber, margin + 6, py);
+      drawPayField('IFSC Code', companyData.ifsc, payCol2, py);
       py += 14;
     }
 
     if (paymentDisplay === 'upi' || paymentDisplay === 'both') {
-      drawPayField('UPI ID', companyData.upiId || '-', 20, py);
+      drawPayField('UPI ID', companyData.upiId, margin + 6, py);
     }
   }
 
-  // ── NOTES ───────────────────────────────────────────────────────────
+  // ── FOOTER / NOTES ──────────────────────────────────────────────────
   if (invoice.notes) {
-    const notesY = payY + (paymentDisplay === 'both' ? 50 : paymentDisplay !== 'none' ? 32 : 14);
+    let notesY;
+    if (paymentDisplay === 'both') notesY = payY + 55;
+    else if (paymentDisplay !== 'none') notesY = payY + 38;
+    else notesY = ty + 16;
     pdf.setFont('helvetica', 'italic');
-    pdf.setFontSize(8.5);
-    pdf.setTextColor(120, 120, 130);
-    const noteLines = pdf.splitTextToSize(`Note: ${invoice.notes}`, pageWidth - 28);
-    pdf.text(noteLines, 14, notesY);
+    pdf.setFontSize(8);
+    pdf.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+    const noteLines = pdf.splitTextToSize(`Notes: ${invoice.notes}`, pageWidth - margin * 2);
+    pdf.text(noteLines, margin, notesY);
   }
 
-  // ── FOOTER ──────────────────────────────────────────────────────────
+  // Agency footer line
   pdf.setFont('helvetica', 'normal');
-  pdf.setFontSize(7.5);
-  pdf.setTextColor(70, 70, 80);
-  const footerText = `Generated by TrackIt Pro  •  ${companyData.companyName}`;
+  pdf.setFontSize(8);
+  pdf.setTextColor(150, 150, 160);
+  const footerText = `Thank you for your business  -  Generated by TrackIt Pro`;
   const fw = pdf.getTextWidth(footerText);
-  pdf.text(footerText, (pageWidth - fw) / 2, pageHeight - 8);
+  pdf.text(footerText, (pageWidth - fw) / 2, pageHeight - 9);
 
-  // Bottom accent line
+  // Brand bottom bar (mirrors top bar for a polished look)
   pdf.setFillColor(r, g, b);
-  pdf.rect(0, pageHeight - 2.5, pageWidth, 2.5, 'F');
+  pdf.rect(0, pageHeight - 4, pageWidth, 4, 'F');
 
-  // ── SAVE ─────────────────────────────────────────────────────────
+  // ── SAVE ─────────────────────────────────────────────────
+  // Use explicit Blob download to guarantee filename + .pdf extension across all browsers
   const fileName = `${invoice.invoice_number || 'invoice'}-${(invoice.client_name || 'client').replace(/\s+/g, '_')}.pdf`;
-  pdf.save(fileName);
+  const pdfBlob = pdf.output('blob');
+  const url = URL.createObjectURL(pdfBlob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
 };

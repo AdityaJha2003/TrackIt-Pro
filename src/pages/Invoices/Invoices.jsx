@@ -71,12 +71,20 @@ export default function Invoices() {
 
   const totals = calcTotals(form);
 
-  // ── NEW INVOICE ──────────────────────────────────────────────────
-  const handleNewInvoice = async () => {
-    const count = await getInvoiceCount(userData.company_id);
-    setForm(defaultForm(userData.invoicePrefix || 'INV', count));
-    setSelected(null);
-    setShowForm(true);
+  const handleNewInvoice = () => {
+    try {
+      const count = invoices.length;
+      setForm(defaultForm(userData?.invoicePrefix || 'INV', count));
+      setSelected(null);
+      setShowForm(true);
+      
+      // Auto-scroll on mobile
+      setTimeout(() => {
+        window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+      }, 50);
+    } catch (e) {
+      console.error("Error creating new invoice:", e);
+    }
   };
 
   // ── SELECT EXISTING ──────────────────────────────────────────────
@@ -119,7 +127,7 @@ export default function Invoices() {
       setShowForm(false);
       setForm(null);
     } catch (e) {
-      console.error(e);
+      console.error("Invoice save failed:", e);
       alert('Failed to save invoice. Please try again.');
     } finally {
       setLoading(false);
