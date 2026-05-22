@@ -161,3 +161,18 @@ export const getInvoiceCount = async (company_id) => {
   const snap = await getDocs(q);
   return snap.size;
 };
+
+// Update reminder tracking metadata for an invoice
+export const updateInvoiceReminderStatus = async (invoiceId, reminderCount, lastReminderSentAt) => {
+  try {
+    await updateDoc(doc(db, "invoices", invoiceId), {
+      reminder_count: reminderCount,
+      last_reminder_sent_at: lastReminderSentAt,
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    console.error("Error updating invoice reminder status:", error);
+    throw error;
+  }
+};
+

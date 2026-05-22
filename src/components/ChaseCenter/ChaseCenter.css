@@ -1,0 +1,272 @@
+.chase-center-card {
+  background: rgba(18, 18, 20, 0.45);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Toast alert inside the widget */
+.chase-toast {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 50;
+  animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1), fadeOut 4s forwards;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.chase-toast.success {
+  background: rgba(16, 185, 129, 0.95);
+  color: #ffffff;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.chase-toast.error {
+  background: rgba(244, 63, 94, 0.95);
+  color: #ffffff;
+  border: 1px solid rgba(244, 63, 94, 0.2);
+}
+
+.chase-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+}
+
+.chase-header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.chase-header-icon {
+  background: rgba(var(--brand-primary-rgb), 0.1);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
+  border-radius: 0.75rem;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chase-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.chase-card-subtitle {
+  font-size: 0.75rem;
+  color: #a1a1aa;
+  margin: 0.15rem 0 0 0;
+}
+
+.chase-badge {
+  background: rgba(var(--brand-primary-rgb), 0.1);
+  color: var(--brand-primary);
+  border: 1px solid rgba(var(--brand-primary-rgb), 0.2);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.chase-invoices-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chase-invoice-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.015);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.chase-invoice-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.chase-inv-details {
+  flex: 1;
+  margin-right: 1.5rem;
+}
+
+.chase-inv-top {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.chase-inv-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--brand-primary);
+  letter-spacing: 0.05em;
+}
+
+.chase-inv-status {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
+.chase-inv-status.overdue {
+  background: rgba(244, 63, 94, 0.15);
+  color: #fb7185;
+}
+
+.chase-inv-status.pending {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+}
+
+.chase-inv-client {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0 0 0.25rem 0;
+}
+
+.chase-inv-meta {
+  font-size: 0.75rem;
+  color: #71717a;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chase-meta-divider {
+  color: #3f3f46;
+}
+
+.chase-inv-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Action Buttons */
+.chase-inv-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.chase-btn-primary {
+  background: var(--brand-primary);
+  color: #0c0c0e;
+  box-shadow: 0 0 10px rgba(var(--brand-primary-rgb), 0.2);
+}
+
+.chase-btn-primary:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+  box-shadow: 0 0 15px rgba(var(--brand-primary-rgb), 0.4);
+}
+
+.chase-btn-primary:active {
+  transform: scale(0.97);
+}
+
+.chase-btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.chase-btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+.chase-btn-snooze {
+  background: transparent;
+  color: #a1a1aa;
+}
+
+.chase-btn-snooze:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.chase-btn-disabled {
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: #3f3f46 !important;
+  cursor: not-allowed !important;
+  border: 1px solid rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Animations */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+
+/* Responsive adjustment */
+@media (max-width: 768px) {
+  .chase-invoice-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .chase-inv-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  .chase-inv-details {
+    margin-right: 0;
+    width: 100%;
+  }
+}

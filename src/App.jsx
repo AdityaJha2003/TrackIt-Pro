@@ -5,30 +5,66 @@ import { StatCards } from './components/StatCards/StatCards';
 import { AddEntryModal } from './components/AddEntryModal/AddEntryModal';
 import { Plus, LogOut, Settings as SettingsIcon, Receipt } from 'lucide-react';
 import { useAuth } from './context/AuthContext';
-import { subscribeToTransactions } from './firebase/services';
+import { subscribeToTransactions, subscribeToInvoices, updateInvoiceReminderStatus } from './firebase/services';
+import { checkRemindersDue, sendAutoReminder } from './utils/chaseService';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import Settings from './pages/Settings/Settings';
 import Invoices from './pages/Invoices/Invoices';
 import { GoalTracker } from './components/GoalTracker/GoalTracker';
+import { ChaseCenter } from './components/ChaseCenter/ChaseCenter';
 
 function Dashboard() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingData, setEditingData] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const { logout, userData } = useAuth();
   const navigate = useNavigate();
+  const autoChasedRef = React.useRef(new Set());
 
   useEffect(() => {
     if (userData?.company_id) {
-      // Subscribing to real-time transactions for the company
-      const unsubscribe = subscribeToTransactions(userData.company_id, (liveTransactions) => {
+      // Subscribing to real-time transactions and invoices
+      const unsubscribeTxns = subscribeToTransactions(userData.company_id, (liveTransactions) => {
         setTransactions(liveTransactions);
       });
-      return () => unsubscribe();
+      const unsubscribeInvs = subscribeToInvoices(userData.company_id, (liveInvoices) => {
+        setInvoices(liveInvoices);
+      });
+      return () => {
+        unsubscribeTxns();
+        unsubscribeInvs();
+      };
     }
   }, [userData]);
+
+  // Background Auto-Chase Execution
+  useEffect(() => {
+    if (userData?.autoChaseEnabled && userData?.resendApiKey && invoices.length > 0) {
+      const runAutoChase = async () => {
+        try {
+          const dueInvoices = checkRemindersDue(invoices, userData.chaseInterval);
+          
+          for (const inv of dueInvoices) {
+            if (autoChasedRef.current.has(inv.id)) continue;
+            autoChasedRef.current.add(inv.id);
+            
+            console.log(`[Auto-Chase] Sending automated reminder for invoice ${inv.invoice_number}`);
+            await sendAutoReminder(inv, userData);
+            
+            const nextCount = (inv.reminder_count || 0) + 1;
+            const todayIso = new Date().toISOString();
+            await updateInvoiceReminderStatus(inv.id, nextCount, todayIso);
+          }
+        } catch (err) {
+          console.error('[Auto-Chase] Background routine encountered an error:', err);
+        }
+      };
+      runAutoChase();
+    }
+  }, [invoices, userData]);
 
   const handleLogout = async () => {
     try {
@@ -95,6 +131,7 @@ function Dashboard() {
 
         <main className="animate-slide-up">
           <GoalTracker transactions={transactions} monthlyGoal={userData?.monthlyGoal} />
+          <ChaseCenter invoices={invoices} companyData={userData} />
           <StatCards transactions={transactions} />
           <TransactionTable transactions={transactions} onEdit={handleOpenModal} />
         </main>

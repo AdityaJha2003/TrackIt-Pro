@@ -4,6 +4,7 @@ import { ArrowLeft, Check, Palette, Loader2, Sparkles, Receipt, CreditCard, Smar
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
+import { sendTestEmail } from '../../utils/chaseService';
 import './Settings.css';
 
 const PRESET_COLORS = [
@@ -28,6 +29,12 @@ const Settings = () => {
   const [accountHolderName, setAccountHolderName] = useState(userData?.accountHolderName || '');
   const [upiId, setUpiId] = useState(userData?.upiId || '');
   const [paymentDisplay, setPaymentDisplay] = useState(userData?.paymentDisplay || 'both');
+  const [autoChaseEnabled, setAutoChaseEnabled] = useState(userData?.autoChaseEnabled || false);
+  const [chaseInterval, setChaseInterval] = useState(userData?.chaseInterval || 5);
+  const [resendApiKey, setResendApiKey] = useState(userData?.resendApiKey || '');
+  const [senderEmail, setSenderEmail] = useState(userData?.senderEmail || '');
+  const [testSending, setTestSending] = useState(false);
+  const [testResult, setTestResult] = useState({ success: false, message: '' });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -46,6 +53,21 @@ const Settings = () => {
     updatePreview(color);
   };
 
+  const handleTestEmail = async () => {
+    if (!resendApiKey) return;
+    setTestSending(true);
+    setTestResult({ success: false, message: '' });
+    try {
+      await sendTestEmail(resendApiKey, senderEmail, userData?.companyName);
+      setTestResult({ success: true, message: 'Test email sent successfully!' });
+    } catch (err) {
+      console.error(err);
+      setTestResult({ success: false, message: err.message || 'Verification failed.' });
+    } finally {
+      setTestSending(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!userData?.company_id) return;
     setLoading(true);
@@ -61,6 +83,10 @@ const Settings = () => {
         account_holder_name: accountHolderName,
         upi_id: upiId,
         payment_display: paymentDisplay,
+        auto_chase_enabled: autoChaseEnabled,
+        chase_interval: Number(chaseInterval),
+        resend_api_key: resendApiKey,
+        sender_email: senderEmail,
       });
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
@@ -244,6 +270,105 @@ const Settings = () => {
               </div>
             </div>
           )}
+        </section>
+
+        {/* ── AUTOMATED CLIENT CHASING ─────────────────────────────────────── */}
+        <section className="settings-section">
+          <div className="section-header">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles size={20} className="text-brand-primary" />
+              <h2 className="section-title">Automated Client Chasing</h2>
+            </div>
+            <p className="section-subtitle">Auto-remind clients when invoices become overdue or remain unpaid.</p>
+          </div>
+
+          {/* Toggle Auto Chase */}
+          <div className="mb-6">
+            <label className="flex items-center gap-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                id="settings-auto-chase-toggle"
+                checked={autoChaseEnabled}
+                onChange={(e) => setAutoChaseEnabled(e.target.checked)}
+                className="w-4 h-4 rounded border-white/5 bg-black/20 text-brand-primary focus:ring-brand-primary/50"
+              />
+              <div>
+                <span className="text-sm font-semibold text-white block">Enable Background Auto-Chase</span>
+                <span className="text-xs text-brand-muted">Reminders will be dispatched automatically on dashboard load.</span>
+              </div>
+            </label>
+          </div>
+
+          {/* Chase Interval */}
+          <div className="mb-6 max-w-xs">
+            <label className="text-sm text-brand-muted mb-2 block">Chase Frequency (Days)</label>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                id="settings-chase-interval-input"
+                value={chaseInterval}
+                onChange={(e) => setChaseInterval(e.target.value)}
+                className={inputClass + " max-w-[80px] text-center"}
+                min="1"
+                max="30"
+              />
+              <span className="text-sm text-brand-muted">days between reminders</span>
+            </div>
+          </div>
+
+          {/* Resend Configuration */}
+          <div className="p-4 rounded-xl bg-black/20 border border-white/5">
+            <p className="text-sm font-semibold mb-4 flex items-center gap-2 text-zinc-300">
+              <Sparkles size={16} className="text-brand-primary" /> Resend Integration
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs text-brand-muted mb-1 block">Resend API Key</label>
+                <input
+                  type="password"
+                  id="settings-resend-api-key-input"
+                  value={resendApiKey}
+                  onChange={(e) => setResendApiKey(e.target.value)}
+                  className={inputClass}
+                  placeholder="re_123456789..."
+                />
+                <p className="text-[10px] text-brand-muted mt-1">Get a free key on <a href="https://resend.com" target="_blank" rel="noreferrer" className="text-brand-primary hover:underline">resend.com</a></p>
+              </div>
+              <div>
+                <label className="text-xs text-brand-muted mb-1 block">Sender Email</label>
+                <input
+                  type="email"
+                  id="settings-sender-email-input"
+                  value={senderEmail}
+                  onChange={(e) => setSenderEmail(e.target.value)}
+                  className={inputClass}
+                  placeholder="billing@yourdomain.com"
+                />
+                <p className="text-[10px] text-brand-muted mt-1">Must be verified on Resend. Default: <em>onboarding@resend.dev</em></p>
+              </div>
+            </div>
+
+            {/* Test Send Button */}
+            {resendApiKey && (
+              <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-4 flex-wrap">
+                <button
+                  type="button"
+                  id="settings-test-email-btn"
+                  onClick={handleTestEmail}
+                  className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-xs font-semibold text-white rounded-lg border border-white/5 transition-all flex items-center gap-2"
+                  disabled={testSending}
+                >
+                  {testSending ? <Loader2 size={12} className="animate-spin" /> : null}
+                  Send Verification Test Email
+                </button>
+                {testResult.message && (
+                  <p className={`text-xs font-medium ${testResult.success ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {testResult.message}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
         </section>
 
         {/* ── COMPANY INFO ─────────────────────────────────────── */}

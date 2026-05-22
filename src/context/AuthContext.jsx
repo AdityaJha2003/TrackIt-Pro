@@ -51,6 +51,10 @@ export const AuthProvider = ({ children }) => {
                   accountHolderName: cData.account_holder_name || '',
                   upiId: cData.upi_id || '',
                   paymentDisplay: cData.payment_display || 'both',
+                  autoChaseEnabled: cData.auto_chase_enabled ?? false,
+                  chaseInterval: cData.chase_interval || 5,
+                  resendApiKey: cData.resend_api_key || '',
+                  senderEmail: cData.sender_email || '',
                 };
                 setUserData(combinedData);
                 
